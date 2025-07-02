@@ -19,7 +19,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-var version = "0.0.5"
+var version = "0.0.6"
 
 var (
 	parseBurp, parseNmap, parseEvidenceDirectory, parseNessusFile     string
@@ -46,13 +46,8 @@ var (
 	devflag        bool
 	ptForgeVersion bool
 	changelog      []string = []string{
-		"Added:",
-		"- Added --gather-ssl functionality, requires --nessus. (experimental support with --evidence)",
-		"- Added --gather-ssh functionality, requires --nessus. (experimental support with --evidence)",
-		"- Added --review-js functionality, requires --burp",
-		"- Added --review-js functionality to --evidence",
-		"Changes:",
-		"- Rearranged additional things into their relevant tool file.",
+		"Fixed:",
+		"Bug when calling --evidence and --gather-* together, due to copied and pasted code",
 	}
 )
 
@@ -200,7 +195,7 @@ func main() {
 		reporting.HandleReporting(ctx, []dataframe.DataFrame{*df}, outputName)
 	}
 
-	if gatherSSH || gatherSSL {
+	if (gatherSSH || gatherSSL) && parseEvidenceDirectory == "" {
 		report, err := nessus.ParseFile(parseNessusFile)
 		if err != nil {
 			log.Error("An error occurred during nessus parsing", "error", err)
@@ -282,10 +277,6 @@ func main() {
 					nessusDataFrames = append(nessusDataFrames, *df)
 				}
 				if gatherSSH || gatherSSL {
-					report, err := nessus.ParseFile(parseNessusFile)
-					if err != nil {
-						log.Error("An error occurred during nessus parsing", "error", err)
-					}
 
 					var plugins []nessus.Plugin
 					var evidenceFile string
