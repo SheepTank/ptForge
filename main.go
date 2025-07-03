@@ -19,7 +19,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-var version = "0.0.6"
+var version = "0.0.7"
 
 var (
 	parseBurp, parseNmap, parseEvidenceDirectory, parseNessusFile     string
@@ -39,15 +39,15 @@ var (
 	outputName                                            string
 
 	// ptForge Specific Details
-	ctx            context.Context = context.Background()
-	silenceOutput  bool
-	checkChangelog bool
-	debugMode      bool
-	devflag        bool
-	ptForgeVersion bool
-	changelog      []string = []string{
-		"Fixed:",
-		"Bug when calling --evidence and --gather-* together, due to copied and pasted code",
+	ctx                         context.Context = context.Background()
+	silenceOutput, checkUpdates bool
+	checkChangelog              bool
+	debugMode                   bool
+	devflag                     bool
+	ptForgeVersion              bool
+	changelog                   []string = []string{
+		"Added:",
+		"- Integration with Github Tags for version checking.",
 	}
 )
 
@@ -85,6 +85,7 @@ func main() {
 	flag.BoolVar(&gatherSSH, "gather-ssh", false, "Gather SSH algorithms evidence from Nessus, and create ptForge output")
 	flag.BoolVar(&gatherSSL, "gather-ssl", false, "Gather SSL ciphers evidence from Nessus, and create ptForge output")
 	flag.BoolVar(&parseJSVulns, "review-js", false, "Extract js-related findings from a burpsuite xml file. Requires --burp flag")
+	flag.BoolVar(&checkUpdates, "update", false, "Check for available updates.")
 	flag.Parse()
 
 	// Setup Context
@@ -94,6 +95,7 @@ func main() {
 	ctx = context.WithValue(ctx, ctxkeys.KeyOutputIPs, outputIPs)
 	ctx = context.WithValue(ctx, ctxkeys.KeyOutputPorts, outputPorts)
 	ctx = context.WithValue(ctx, ctxkeys.KeyDebugMode, debugMode)
+	ctx = context.WithValue(ctx, ctxkeys.KeyVersion, version)
 
 	if silenceOutput {
 		log.SetOutput(io.Discard)
@@ -103,6 +105,17 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 		log.SetReportCaller(true)
 		log.Debug("Reporting Info", "Flags", []any{"formatCSV", formatCSV, "formatJSON", formatJSON, "outputIPs", outputIPs, "outputPorts", outputPorts})
+	}
+
+	if !silenceOutput && checkUpdates {
+		if versionName, behind, err := helper.CheckUpdates(ctx); err == nil {
+			if behind {
+				log.Warn(fmt.Sprintf("Please update to the latest ptForge version. (GitHub: %s, Local: v%s)", versionName, version))
+				time.Sleep(time.Millisecond * 500)
+			} else {
+				log.Info("No updates available.")
+			}
+		}
 	}
 
 	if ptForgeVersion {

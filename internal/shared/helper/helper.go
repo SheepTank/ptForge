@@ -1,10 +1,16 @@
 package helper
 
 import (
+	"context"
+	"encoding/json"
 	"encoding/xml"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"ptForge/internal/shared/burp"
+	"ptForge/internal/shared/ctxkeys"
 	"ptForge/internal/shared/nessus"
 	"ptForge/internal/shared/nmap"
 	"reflect"
@@ -12,6 +18,18 @@ import (
 
 	"github.com/charmbracelet/log"
 )
+
+// type GithubTags struct {
+// 	Tags []Tag
+// }
+
+type Tag struct {
+	Name    string            `json:"name"`
+	Zip     string            `json:"zipball_url"`
+	Tar     string            `json:"tarball_url"`
+	NodeURL string            `json:"node_id"`
+	Commit  map[string]string `json:"commit"`
+}
 
 // Check string for contents of a slice, inverse of slices.Contains
 func ContainsAny(str string, slice []string) bool {
@@ -63,4 +81,27 @@ func ParseDir(directory string) []any {
 		}
 	}
 	return reports
+}
+
+func CheckUpdates(ctx context.Context) (string, bool, error) {
+	log.Debug("Checking for updates")
+	resp, err := http.Get("https://api.github.com/repos/sheeptank/ptForge/tags")
+	if err != nil {
+		if i := ctx.Value(ctxkeys.KeyDebugMode); i.(bool) {
+			log.Error("An error occurred during the latest version check.", "error", err)
+		}
+	}
+	var b []Tag
+	buf, _ := io.ReadAll(resp.Body)
+	err = json.Unmarshal(buf, &b)
+	if err != nil {
+		log.Error("Failed to parse json body from github")
+	}
+
+	version := ctx.Value(ctxkeys.KeyVersion)
+	if fmt.Sprintf("v%s", version) == b[0].Name {
+		return b[0].Name, false, nil
+	} else {
+		return b[0].Name, true, nil
+	}
 }
