@@ -139,6 +139,7 @@ var bad = map[string][]string{
 		"hmac-sha2-512-etm@openssh.com",
 		"rijndael-cbc@lysator.liu.se",
 		"ssh-dsa",
+		"ssh-dss",
 		"ssh-rsa",
 		"ssh-rsa1",
 		"umac-128-etm@openssh.com",
@@ -463,9 +464,6 @@ var bad = map[string][]string{
 		"TLS_SRP_SHA_WITH_AES_128_CBC_SHA",
 		"TLS_SRP_SHA_WITH_AES_256_CBC_SHA",
 	},
-	"ssl-enum-ciphers-grades": {
-		"B", "C", "D", "E", "F",
-	},
 	"ssl-cipher-suits-without-pfs": {
 		"_ECDHE_", "_DHE_",
 	},
@@ -563,7 +561,6 @@ func GetScriptOutput(nmap NmapXML) (*dataframe.DataFrame, error) {
 	for _, host := range nmap.Hosts {
 		var ipaddress string = host.Address[0].Addr
 		for _, address := range host.Address {
-			log.Debug("nmap.GetOpenPorts", "address", address)
 			if address.AddrType == "ipv4" {
 				ipaddress = address.Addr
 				log.Debug("nmap.GetScriptOutput Resolved to IPv4 Address", "ipaddress", ipaddress)
@@ -587,18 +584,13 @@ func GetScriptOutput(nmap NmapXML) (*dataframe.DataFrame, error) {
 									var ianaColId int = -1
 									var typestrengthColId int = -1
 
-									log.Debug(col.Elems)
 									for colId, elem := range col.Elems {
-										log.Debug("Checking element", "elem", elem)
 										if slices.Contains(grades, elem) && (len(elem) == 1) {
 											gradeColId = colId
-											log.Debugf("Matched %s to Grade", elem)
 										} else if !strings.HasPrefix(elem, "TLS_") {
 											typestrengthColId = colId
-											log.Debugf("Matched %s to TypeStrength", elem)
 										} else if strings.HasPrefix(elem, "TLS_") {
 											ianaColId = colId
-											log.Debugf("Matched %s to IANA", elem)
 										}
 									}
 
@@ -622,24 +614,13 @@ func GetScriptOutput(nmap NmapXML) (*dataframe.DataFrame, error) {
 									algotype := KeyToCSV[cipherSuiteCol.Key]
 									algo := fmt.Sprintf("%s (%s)", iana, typestrength)
 
-									if slices.Contains(bad["ssl-enum-ciphers-grades"], grade) {
-										stats["grade"]++
-										hosts = append(hosts, ipaddress)
-										ports = append(ports, port.PortID)
-										algotypes = append(algotypes, algotype)
-										algorithm = append(algorithm, algo)
-									} else if strings.Contains(strings.ToUpper(iana), "CBC") {
-										stats["cbc"]++
-										hosts = append(hosts, ipaddress)
-										ports = append(ports, port.PortID)
-										algotypes = append(algotypes, algotype)
-										algorithm = append(algorithm, algo)
-									} else if slices.Contains(bad["ssl-enum-ciphers-ciphers"], iana) {
+									if slices.Contains(bad["ssl-enum-ciphers-ciphers"], iana) {
 										stats["cipher"]++
 										hosts = append(hosts, ipaddress)
 										ports = append(ports, port.PortID)
 										algotypes = append(algotypes, algotype)
 										algorithm = append(algorithm, algo)
+										log.Debug("Reporting cipher based on known-bad list", "iana", iana)
 									}
 								}
 							}
@@ -681,12 +662,6 @@ func GetScriptOutput(nmap NmapXML) (*dataframe.DataFrame, error) {
 	}
 
 	df := dataframe.LoadMaps(rows)
-	// df = df.Arrange(
-	// 	dataframe.Order{Colname: "Host", Reverse: false},
-	// 	dataframe.Order{Colname: "Port", Reverse: false},
-	// 	dataframe.Order{Colname: "Algorithm Type", Reverse: false},
-	// 	dataframe.Order{Colname: "Algorithm", Reverse: false},
-	// )
 	df = df.Select([]string{"Host", "Port", "Algorithm Type", "Algorithm"})
 
 	return &df, nil
