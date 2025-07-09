@@ -48,8 +48,10 @@ var (
 	changelog                   []string = []string{
 		"Added:",
 		"- Integration with Github Tags for version checking.",
+		"- Missing SSL-related plugin IDs to Nessus.",
 		"Removed:",
 		"- Removed the 'none' compression cipher from the general 'bad' list, as it only affects legacy OpenSSH Servers.",
+		"- Removed grading system for SSL ciphers, which modified grades, causing secure ciphers to be graded poorly. May revisit this in the future.",
 	}
 )
 
