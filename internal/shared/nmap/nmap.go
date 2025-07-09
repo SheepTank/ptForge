@@ -137,7 +137,6 @@ var bad = map[string][]string{
 		"hmac-sha2-256-etm@openssh.com",
 		"hmac-sha2-512-96",
 		"hmac-sha2-512-etm@openssh.com",
-		"none",
 		"rijndael-cbc@lysator.liu.se",
 		"ssh-dsa",
 		"ssh-rsa",

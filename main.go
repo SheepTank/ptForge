@@ -19,7 +19,7 @@ import (
 	"github.com/go-gota/gota/dataframe"
 )
 
-var version = "0.0.7"
+var version = "0.0.8"
 
 var (
 	parseBurp, parseNmap, parseEvidenceDirectory, parseNessusFile     string
@@ -48,6 +48,8 @@ var (
 	changelog                   []string = []string{
 		"Added:",
 		"- Integration with Github Tags for version checking.",
+		"Removed:",
+		"- Removed the 'none' compression cipher from the general 'bad' list, as it only affects legacy OpenSSH Servers.",
 	}
 )
 
