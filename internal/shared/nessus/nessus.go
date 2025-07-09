@@ -17,7 +17,7 @@ const NessusRiskMedium int = 2
 const NessusRiskHigh int = 3
 const NessusRiskCritical int = 4
 
-const NessusSSLPluginList string = "31705 57582 157288 104743 42873 104743 157288 51192 20007 65821 31705 78479 15901"
+const NessusSSLPluginList string = "31705 57582 157288 104743 42873 104743 157288 51192 20007 65821 31705 78479 15901 35291 45411"
 const NessusInfoPluginList string = "10107 149334 149334"
 const NessusSSHDetectionPlugin string = "10267"
 
